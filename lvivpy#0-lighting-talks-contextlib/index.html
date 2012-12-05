@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+
+<!--
+  Google HTML5 slide template
+
+  Authors: Luke Mahé (code)
+           Marcin Wichary (code and design)
+
+           Dominic Mazzoni (browser compatibility)
+           Charles Chen (ChromeVox support)
+
+  URL: http://code.google.com/p/html5slides/
+-->
+
+<html>
+    <head>
+        <title>contextlib</title>
+        <meta charset='utf-8'>
+        <script src='http://html5slides.googlecode.com/svn/trunk/slides.js'></script>
+    </head>
+
+    <style>
+        /* Your individual styles here, or just use inline styles if that’s what you want. */
+        .no-margin {
+            margin-top: 0px;
+            margin-bottom: 0px;
+        }
+
+        .a-bit-smaller {
+            font-size: 20px;
+        }
+    </style>
+
+    <body style='display: none'>
+        <section class='slides layout-regular template-default'>
+
+
+            <article class='nobackground no-margin'>
+                <h3>with statement</h3>
+                <section>
+<pre>
+import threading
+lock = threading.Lock()
+
+with lock:
+    # block starts (lock acquired)
+    instructions
+    # block ends
+    
+# lock released
+</pre>
+<pre>
+with open("file", "a") as f:
+    # block starts
+    some operations on file f
+    # block ends
+</pre>
+                </section>
+            </article>
+
+
+            <article class='nobackground'>
+                <h3>with statement</h3>
+                <section>
+<pre>
+class LockType(object):
+    """
+    A lock object is a synchronization primitive.
+    """
+    def __enter__(self, *args, **kwargs): # real signature unknown
+        """
+        acquire([wait]) -> None or bool
+        (acquire_lock() is an obsolete synonym)
+        ...
+        """
+
+    def __exit__(self, *args, **kwargs): # real signature unknown
+        """
+        release()
+        (release_lock() is an obsolete synonym)
+        ...
+        """
+</pre>
+                </section>
+            </article>
+
+
+            <article class='nobackground'>
+                <h3>with statement</h3>
+                <section>
+<pre>
+with obj as some_variable:
+    # block starts
+    instructions
+    # block ends
+</pre>
+<pre>
+def obj.__enter__(...):
+    variable = ... # it will be available as "some_variable"
+    return variable
+</pre>
+<pre>
+def obj.__exit__(type, value, traceback): # (None, None, None)
+    return True # raised exception is handled
+
+    return False # just let it go, pass raised exception up
+</pre>
+                </section>
+            </article>
+
+            <article class='nobackground'>
+                <h3>contextlib.py: @contextmanager decorator</h3>
+                <section>
+<p class="a-bit-smaller">Typical usage:</p>
+<pre class="no-margin">
+    @contextmanager
+    def some_generator(arguments):
+        setup
+        try:
+            yield value # just like __enter__ return
+        finally:
+            cleanup
+</pre>
+<p class="a-bit-smaller">This makes this:</p>
+<pre class="no-margin">
+with some_generator(arguments) as variable:
+    body
+</pre>
+<p class="a-bit-smaller">equivalent to this:</p>
+<pre class="no-margin">
+setup
+try:
+    variable = value
+    body
+finally:
+    cleanup
+</pre>
+                </section>
+            </article>
+
+
+            <article class='nobackground'>
+                <h3>contextlib.py: @contextmanager decorator</h3>
+                <section>
+<pre>
+from contextlib import contextmanager
+
+@contextmanager
+def tag(name):
+    print "<%s>" % name
+    yield
+    print "</%s>" % name
+
+>>> with tag("h1"):
+...    print "foo"
+...
+</pre>
+
+<pre>
+&lt;h1&gt;
+foo
+&lt;/h1&gt;
+</pre>
+                </section>
+            </article>
+
+            <article class='nobackground'>
+                <h3>sqlalchemy session</h3>
+                <section>
+<pre>
+from contextlib import contextmanager
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+@contextmanager
+def get_db_session(uri):
+    engine = create_engine(uri)
+    Session = sessionmaker(bind=some_engine)
+    session = Session()
+    try:
+        yield session
+    finally:
+        session.commit()
+        session.close()
+</pre>
+<pre>
+with use_db_session('postgresql://user:pass@host/') as session:
+    # operations with database
+    session.add(...)
+</pre>
+                </section>
+            </article>
+
+
+            <article class='nobackground'>
+                <h3>fabric.context_managers</h3>
+                <section>
+<pre>
+from fabric.context_managers import cd, hide, prefix
+# pwd = /var
+with cd('/var/www'):
+    run('ls') # cd /var/www && ls
+    with cd('website1'):
+        run('ls') # cd /var/www/website1 && ls
+# pwd = /var
+</pre>
+
+<pre>
+def my_task():
+    with hide('running', 'stdout', 'stderr'):
+        run('ls /var/www')
+</pre>
+
+<pre>
+with cd('/path/to/app'):
+    with prefix('workon myvenv'):
+        run('./manage.py syncdb')
+</pre>
+                </section>
+            </article>
+            
+
+            <article class='nobackground'>
+                <h3>mock</h3>
+                <section>
+                    
+<pre>
+import mock
+
+my_mock = mock.MagicMock()
+with mock.patch('__builtin__.open', my_mock):
+    with open('foo') as h:
+        pass
+</pre>
+
+<pre>
+>>> my_mock = mock.MagicMock()
+>>> with my_mock:
+...     pass
+...
+>>> my_mock.__enter__.assert_called_with()
+>>> my_mock.__exit__.assert_called_with(None, None, None)
+</pre>
+                </section>
+            </article>
+
+            <article class='nobackground'>
+                <h3>Flask ;-)</h3>
+                <section>
+<pre>
+from flask import request
+
+with app.test_request_context('/hello', method='POST'):
+    # now you can do something with the request until the
+    # end of the with block, such as basic assertions:
+    assert request.path == '/hello'
+    assert request.method == 'POST'
+</pre>
+                </section>
+            </article>
+
+<!--with self._db.write_context(REPLICATION_GROUP):
+    result = self._db.execute("DELETE FROM unlockedContent\n"
+                                "WHERE unlockKey = %s",
+                                (unlockKey,))
+
+
+
+    @contextmanager
+    def _step_in_step_out_context(self, group, shard_id=None,
+                                  is_write=False, is_transaction=False,
+                                  host=None):
+
+        # Start a request, if necessary
+        end_request = False
+        if not self._in_request:
+            self.start_request()
+            end_request = True
+
+        self._step_in(group, shard_id=shard_id,
+                      is_write=is_write, is_transaction=is_transaction,
+                      host=host)
+
+        try:
+            yield self.get_current_connection()
+        finally:
+            self._step_out()
+
+            # End the request only if we started it
+            if end_request:
+                self.end_request()            -->
+
+
+
+
+
+
+        </section>
+    </body>
+</html>
