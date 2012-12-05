@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+
+<!--
+  Google HTML5 slide template
+
+  Authors: Luke Mahé (code)
+           Marcin Wichary (code and design)
+
+           Dominic Mazzoni (browser compatibility)
+           Charles Chen (ChromeVox support)
+
+  URL: http://code.google.com/p/html5slides/
+-->
+
+<html>
+    <head>
+    	<title>Обзор NoSQL хранилищ данных</title>
+        <meta charset="utf-8">
+        <script src="http://html5slides.googlecode.com/svn/trunk/slides.js"></script>
+    </head>
+
+    <style>
+        /* Your individual styles here, or just use inline styles if that’s what you want. */
+		body .slides > article {
+		 font-family: Arial, Helvetica, sans-serif;
+		}
+
+		.nomargin {
+            margin-top: 0px;
+            margin-bottom: 0px;
+        }
+
+        .a-bit-smaller {
+            font-size: 20px;
+        }
+
+        .prettyprint {
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+
+    </style>
+
+    <body style="display: none">
+        <section class="slides layout-regular template-default">
+
+            <article class="nobackground">
+                <img width="550px" src="images/expert-in-nosql.jpg" class="centered">
+                <div class="source"><a href="http://geekandpoke.typepad.com/">Geek And Poke</a></div>
+            </article>
+
+
+			<article class="nobackground">
+				<h1>
+					Обзор нереляционных хранилищ данных
+					<br>
+					MongoDB, Redis, BigTable
+				</h1>
+				<p>
+					Александр Щапов, @darednaxella
+				  	<br>
+				  	Lviv.py#1
+				</p>
+			</article>
+
+            <article class="nobackground">
+                <h3>Требования к хранилищам данных сегодня</h3>
+                <p>
+                    <ul>
+                        <li>много данных</li>
+                        <li>очень много данных</li>
+                        <li>огромное количество запросов</li>
+                        <li>доступность в любой момент времени</li>
+                    </ul>
+                </p>
+            </article>
+
+			<article class="nobackground">
+                <h3>Реляционные СУБД</h3>
+                <p>
+                    <ul>
+                        <li>строгая структура таблиц</li>
+                        <li>высокая согласованность данных</li>
+                        <li>ACID* требования к транзакционной системе</li>
+                        <li>проверены временем</li>
+                    </ul>
+                </p>
+                <div class="source">* ACID: Atomicity, Consistency, Isolation, Durability</div>
+			</article>
+
+            <article class="nobackground">
+                <h3>Теорема CAP</h3>
+                    <p>В любой реализации распределённых вычислений возможно обеспечить не более двух из трёх следующих свойств:</p>
+                    <ul>
+                        <li>согласованность данных (consistency)</li>
+                        <li><b>доступность</b> (availability)</li>
+                        <li><b>устойчивость к разделению</b> (partition tolerance)</li>
+                    </ul>
+                    <div class="source">
+                        CAP theorem, Эрик Брюер (Eric Brewer)
+                    </div>
+            </article>
+
+            <article class="nobackground">
+                <h3>Теорема CAP</h3>
+                <p>
+                    <img class="centered" src="images/cap_explained.png">
+                </p>
+            </article>
+
+			<article class="nobackground">
+                <h3>Not only SQL</h3>
+					<p>
+						<ul>
+							<li>нет &laquo;классического&raquo; SQL</li>
+							<li>нет строгой структуры</li>
+							<li>представление в виде агрегатов (минимум JOIN'ов)</li>
+                            <li>хорошая горизонтальная масштабируемость</li>
+                            <li>высокая доступность</li>
+							<li>cогласованность в пределах одного узла или &laquo;согласованность в конечном счете&raquo;.</li>
+						</ul>
+					</p>
+					<p>
+                        Кроме того:
+                        <ul>
+                            <li>открытый код (сейчас 150 реализаций, согласно nosql-database.org)</li>
+                        </ul>
+					</p>
+            </article>
+
+			<article class="nobackground">
+                <h3>Классификация NoSQL решений</h3>
+                <p>
+                    <ul>
+                        <li>ключ-значение (key-value)</li>
+                        <li>колоночные (column)</li>
+                        <li>документо-ориентированные (document-oriented)</li>
+                        <li>графовые (graph)</li>
+                        <li>остальные:
+                            <p>
+                            <ul>
+                                <li>файловая система</li>
+                                <li>пространственные БД</li>
+                            </ul>
+                            </p>
+                        </li>
+                    </ul>
+                </p>
+            </article>
+
+            <article class="nobackground">
+                <h3>Хранилища &laquo;ключ/значение&raquo;</h3>
+                <img src="images/key-value-pairs.png" style="float: right; margin-top: 45px">
+				<ul>
+					<li>не требуют описания структуры</li>
+					<li>можно хранить всю БД в оперативной памяти</li>
+					<li>спроектированы с учётом требований к масштабируемости и работе с большим количеством данных</li>
+					<li>как представлены: набор пар ключ-значение</li>
+				</ul>
+                <p style="color: #1C5F93">
+                    Redis, LevelDB, MemcacheDB, Tokyo-Cabinet
+                </p>
+            </article>
+
+            <article class="nobackground smaller">
+                <h3>Колоночные хранилища</h3>
+                <p>Каждая строка в таблице может иметь значение в некоторых, но не обязательно во всех, столбцах.</p>
+                <p>
+                Полные строки, как в реляционных БД:
+<pre>
+[A1, B1, C1], [A2, B2, C2], [A3, B3, C3]…
+где A, B и С — это поля (столбцы), а 1,2 и 3 — номер записи (строки).
+</pre>
+                </p>
+                <p>
+                Колоночное представление:
+<pre>[A1, A2, A3], [B1, B2, B3], [C1, C2, C3]…</pre>
+                </p>
+                <img src="images/columns.png" style="width: 600px">
+                <p style="color: #1C8544">BigTable, Cassandra, HBase</p>
+                <div class="source">Картинка: financialweak.com: <a href="http://financialweak.com/?p=72">The size is matter</a></div>
+            </article>
+
+            <article class="nobackground smaller">
+                <h3>Документо-ориентированные БД</h3>
+                <img src="images/document-oriented.png" style="float: right; margin-top: 45px">
+                <ul>
+                    <li>как ключ-значение, но значением выступает документ или объект, например, JSON, BSON или XML, или же PDF, Microsoft Word документ.</li>
+                    <li>не требуют описания структуры</li>
+                    <li>можно использовать версионирование документов</li>
+                </ul>
+
+                <p style="color: #A59BE3">MongoDB, CouchDB, SimpleDB, IBM Lotus Notes, Mnesia</p>
+            </article>
+
+            <article class="nobackground smaller">
+                <h3>Графовые базы данных</h3>
+                <img src="images/graph-db.png" class="centered">
+                <ul>
+                    <li>элементы модели: узлы и связи</li>
+                    <li>моделирование социальных графов</li>
+                </ul>
+
+                <p style="color: orange">Neo4j, GiraffeDB, GraphBase</p>
+            </article>
+
+            <article class="nobackground">
+                <h3>Redis: <span style="text-decoration: underline">re</span>mote <span style="text-decoration: underline">di</span>ctionary <span style="text-decoration: underline">s</span>erver</h3>
+                <img src="images/redis.jpg" style="float: right; margin-top: 45px">
+                <ul>
+                    <li>хранит БД в оперативной памяти, записывается на диск</li>
+                    <li>поддерживает строки, связанные списки, множества, хеш таблицы в качестве значений</li>
+                    <li>master/slave репликация</li>
+                    <li>есть библиотеки под все основные языки</li>
+                    <li>100k операций чтения/записи в секунду</li>
+                </ul>
+                <p style="color: #1C5F93">VMWare, Github, Stackoverflow, Craiglist, Flickr, ...</p>
+            </article>
+
+            <article class="nobackground smaller">
+                <h3>Redis в действии</h3>
+				<p>
+<pre>
+$ redis-server
+[7269] 02 Dec 15:22:08 * Server started, Redis version 2.4.17
+[7269] 02 Dec 15:22:08 * The server is now ready to accept connections on port 6379
+
+$ redis-cli
+redis 127.0.0.1:6379> set hello world
+OK
+redis 127.0.0.1:6379> get hello
+"world"
+redis 127.0.0.1:6379> set user:21:email "hello@lohika.com"
+OK
+redis 127.0.0.1:6379> get user:21:email
+"hello@lohika.com"
+</pre>
+<p>
+<pre>
+SET/MSET, GET/MGET, GETSET, EXISTS, DEL, RENAME, EXPIRE, EXPIREAT, TTL,
+RANDOMKEY, INCR/INCRBY, DECR/DECRBY, MULTI..EXEC, L* (lists), S* (sets),
+H* (hashes), L/R-POP/PUSH (queues)
+</pre>
+</p>
+
+<pre>
+>>> import redis
+>>> r = redis.StrictRedis(host='localhost', port=6379, db=0)
+>>> r.set('foo', 'bar')
+True
+>>> r.get('foo')
+'bar'
+</pre>
+				</p>
+            </article>
+
+            <article class="nobackground smaller">
+                <h3>MongoDB: hu<span style="text-decoration: underline">mongo</span>us</h3>
+                <img width="200px" src="images/mongo-db.png" style="float: right; margin-top: 45px">
+                <ul>
+                    <li>представление: JSON документы, хранимые в BSON</li>
+                    <li>нет структуры таблиц</li>
+                    <li>гибкий язык запросов</li>
+                    <li>полная поддержка индексов</li>
+                    <li>масштабируемость: асинхронная репликация, шардинг</li>
+                    <li>MapReduce</li>
+                    <li>атомарность на уровне документа</li>
+					<li>GridFS</li>
+                    <li>нет изоляции</li>
+                    <li>нет JOIN'ов</li>
+                    <li>есть библиотеки под все основные языки</li>
+                </ul>
+                <p style="color: #A59BE3">Disney, EA, Bitly, Github, Foursquare, ...</p>
+            </article>
+
+            <article class="nobackground">
+                <h3>MongoDB</h3>
+				<ul>
+					<li>database &rarr; Database</li>
+					<li>table &rarr; Collection</li>
+					<li>row &rarr; Document</li>
+				</ul>
+<pre>
+var mydoc = {
+   _id: ObjectId("5099803df3f4948bd2f98391"),
+   name: { first: "Alan", last: "Turing" },
+   birth: new Date('Jun 23, 1912'),
+   death: new Date('Jun 07, 1954'),
+   contribs: [ "Turing machine", "Turing test", "Turingery" ],
+   views : NumberLong(1250000)
+}
+</pre>
+            </article>
+
+            <article class="nobackground smaller">
+                <h3>MongoDB shell</h3>
+<pre>
+$ mongod
+all output going to: /usr/local/var/log/mongodb/mongo.log
+$ mongo
+MongoDB shell version: 2.2.0
+connecting to: test
+> show dbs
+local	(empty)
+
+> use mydb
+switched to db mydb
+
+>  j = { name : "mongo" };
+{ "name" : "mongo" }
+> t = { x : 3 };
+{ "x" : 3 }
+> db.things.save(j);
+> db.things.save(t);
+
+> db.things.find();
+{ "_id" : ObjectId("50bf6a6bff797b3b4b688812"), "name" : "mongo" }
+{ "_id" : ObjectId("50bf6a6eff797b3b4b688813"), "x" : 3 }
+> show collections
+system.indexes
+things			
+</pre>
+            </article>
+			
+            <article class="nobackground smaller">
+                <h3>MongoDB: INSERT, SELECT, UPDATE, DELETE</h3>
+<pre>
+> db.users.insert({username: "Yet another mongo user", email: "mongofun@lohika.com", created_at: new Date(), age: 27})
+
+> db.users.find({email: {$in: ["mongofun@lohika.com"]}})
+> db.users.find({$or: [{username: "joe"}, {email: "joe@joe.com"}]})
+> db.users.find({age: {$not: {$gt: 21}}})
+> db.users.find({username: "Yet another mongo user"}, {created_at: true})
+
+> db.users.count()
+1
+> db.users.distinct("age", {created_at: {$gt: new Date()}})
+[...]
+
+> db.collection.find({ field: /acme.*corp/i});
+> db.collection.find({ location: {$near: [100, 100]}});
+> db.collection.find({ points: {$size: 2}}).sort({name: 1});
+
+
+> db.users.update({email: "mongofun@lohika.com"}, {$unset: {"username": ""}, 
+$inc: {age: 1}})
+
+> db.users.remove({})
+</pre>				
+            </article>
+
+            <article class="nobackground smaller">
+                <h3>MongoDB: map/reduce</h3>
+<pre>
+{
+     _id: ObjectId("50a8240b927d5d8b5891743c"),
+     cust_id: "abc123",
+     ord_date: new Date("Oct 04, 2012"),
+     status: 'A',
+     price: 250,
+     items: [ { sku: "mmm", qty: 5, price: 2.5 },
+              { sku: "nnn", qty: 5, price: 2.5 } ]
+}
+...	
+	
+var map_func = function() {
+	emit(this.cust_id, this.price);
+};
+
+var reduce_func = function(keyCustId, valuesPrices) {
+	return Array.sum(valuesPrices);
+};
+
+db.orders.mapReduce(
+	map_func,
+	reduce_func,
+	{ out: "map_reduce_example" }
+)
+</pre>
+            </article>
+
+            <article class="nobackground">
+                <h3>MongoDB: pymongo</h3>
+<pre>
+>>> from pymongo import MongoClient
+>>> connection = MongoClient()
+>>> connection = MongoClient('localhost', 27017)
+>>> db = connection.mydb
+
+>>> post = {"author": "Mike",
+...         "text": "My first blog post!",
+...         "tags": ["mongodb", "python", "pymongo"],
+...         "date": datetime.datetime.utcnow()}
+>>> posts = db.posts
+>>> post_id = posts.insert(post)
+>>> post_id
+ObjectId('...')
+
+>>> posts.find({"author": "Mike"})
+{u'date': datetime.datetime(...), u'text': u'My first blog post!', ..
+</pre>
+            </article>
+
+            <article class="nobackground smaller">
+                <h3>MongoDB: масштабирование</h3>
+				<img width="600px" src="images/mongodb-sharding.png" class="centered">
+				<ul>
+					<li><code>mongod</code> &mdash; сервер и данные</li>
+					<li><code>mongos</code> &mdash; роутер</li>
+					<li><code>config server</code> &mdash; хранит мета-данные о том, где искать</li>
+				</ul>
+<pre>
+# connect to single server
+db = connect("localhost:27017")
+# connect to a router
+db = connect("localhost:27017")
+</pre>
+			</article>
+			
+			<article class="nobackground">
+				<h3>BigTable</h3>
+				<ul>
+					<li>"Петабайт данных на тысячи машин"</li>
+					<li>построена поверх Google File System (распределённая файловая система)</li>
+					<li>не используется за пределами Google, но можно попробовать в GAE</li>
+					<li>HBase -- BigTable для Hadoop</li>
+					<li>Cassandra -- хранилище данных по модели BigTable для Facebook</li>
+				</ul>
+			</article>
+			
+			<article class="nobackground">
+				<h3>BigTable</h3>
+				<ul>
+					<li>представление данных: (row, column, timestamp) &rarr; string</li>
+					<li>атомарные операции чтения-записи над строкой</li>
+					<li>динамически добавляемые колонки</li>
+					<li>версии строки по времени</li>
+					<li>строки могут объединяться в Tablet'ы, колонки собираться в Families</li>
+					<li>API</li>
+				</ul>
+				<img src="images/bigtable-versions.png" class="centered">
+			</article>
+			
+			<article class="nobackground">
+				<h3>BigTable архитектура</h3>
+				<ul>
+					<li>клиент</li>
+					<li>Master сервер: организация Tablet'ов, балансировка нагрузки, сборка мусора, изменения в структуре таблиц</li>
+					<li>Tablet сервера: обслуживают запросы на чтение и запись, добавляются и удаляются динамически, разделяются, если данных в наборе больше 100-200 Мб</li>
+					<li>SSTable: хранилище данных</li>
+					<li>Chubby: сервис отслеживания блокировок, ACL списки</li>
+				</ul>
+				
+			</article>
+
+            <article class="nobackground">
+                <h3>Область применения NoSQL</h3>
+                <p>
+                    <ul>
+                        <li>системы, где много данных, но можно пренебречь согласованностью</li>
+                        <li>веб-приложения</li>
+						<li>социальные сети</li>
+						<li>потоковое вещание видео и аудио контента</li>
+						<li>...</li>
+                    </ul>
+                </p>
+            </article>
+
+            <article class="nobackground">
+                <h3>Выводы</h3>
+                <ul>
+                    <li>легко использовать</li>
+                    <li>но тяжело встраивать в готовые системы, где уже много завязано на реляционные данные</li>
+					<li>слабые ACID требования &rarr; выше производительность</li>
+                    <li>&laquo;согласованность в конечном счете&raquo;</li>
+                    <li>нет структуры &rarr; сложнее поддержка</li>
+                    <li>ответственность за целостность данных лежит на приложении</li>
+                    <li>выбор в пользу NoSQL зависит от конкретной задачи</li>
+                </ul>
+            </article>
+
+
+            <article class="nobackground">
+                <h3>Что ещё почитать</h3>
+                <ol>
+                    <li><a href="http://nosql-database.org/">nosql-database.org</a></li>
+                    <li>&laquo;Ошибки в системах баз данных, согласованность "в конечном счете" и теорема CAP&raquo;, Оригинал: Michael Stonebraker. <a href="http://cacm.acm.org/blogs/blog-cacm/83396-errors-in-database-systems-eventual-consistency-and-the-cap-theorem/fulltext#">Errors in Database Systems, Eventual Consistency, and the CAP Theorem</a>. BLOG@CACM, April 5, 2010</li>
+					<li><a href="http://static.googleusercontent.com/external_content/untrusted_dlcp/research.google.com/en//archive/bigtable-osdi06.pdf">Bigtable: A Distributed Storage System for Structured Data</a> (Google)</li>
+                    <li><a href="http://www.slideshare.net/thobe/nosql-for-dummies">NoSQL for Dummies</a>, Tobias Ivarsson</li>
+                    <li><a href="http://www.slideshare.net/quipo/nosql-databases-why-what-and-when">NoSQL Databases: Why, what and when</a> by Lorenzo Alberton</li>
+                    <li>ключевые слова: NoSQL, ACID, CAP теорема, MongoDB, Redis, BigTable, etc.</li>
+                </ol>
+            </article>
+
+            </section>
+    </body>
+</html>

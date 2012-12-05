@@ -1,4 +1,4 @@
-talks
+Talks
 =====
 
-Talks from meetups
+My talks from Python meetups
